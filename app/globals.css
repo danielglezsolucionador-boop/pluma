@@ -1,26 +1,89 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #6C3FF5;
+  --ink2: #8B5CF6;
+  --ink3: #A78BFA;
+  --gold: #D4A017;
+  --gold2: #F5C842;
+  --teal: #0ABFBC;
+  --text: #1A1A2E;
+  --text2: #4A5568;
+  --text3: #718096;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--text);
+  background: linear-gradient(135deg, #F8F6FF 0%, #EDE8FF 40%, #DDD5FF 100%);
+  min-height: 100vh;
 }
+
+h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
+
+.glass-card {
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 18px;
+  box-shadow: 0 16px 48px rgba(108,63,245,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 64px rgba(108,63,245,0.14);
+}
+
+.btn-ink {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #6C3FF5, #8B5CF6);
+  color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-ink:hover { opacity: 0.9; }
+
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.orb-1 { width: 500px; height: 500px; background: #6C3FF5; top: -150px; right: -100px; }
+.orb-2 { width: 400px; height: 400px; background: #0ABFBC; bottom: -100px; left: -100px; }
+
+.dot-grid {
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(rgba(108,63,245,0.1) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.motor-card { border-top: 3px solid; }
+.motor-editorial { border-color: #6C3FF5; }
+.motor-academico { border-color: #0ABFBC; }
+.motor-guiones { border-color: #F5C842; }
+.motor-social { border-color: #EC4899; }
+.motor-web { border-color: #10B981; }
+.motor-servicios { border-color: #F97316; }

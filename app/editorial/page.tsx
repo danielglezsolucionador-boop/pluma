@@ -1,9 +1,11 @@
 'use client';
-
 import { useState } from 'react';
+import { sendPromptToCentinela } from '@/lib/centinela';
 
 export default function Editorial() {
   const [paso, setPaso] = useState(1);
+  const [sending, setSending] = useState(false);
+  const [centinelaResult, setCentinelaResult] = useState<{ blocked: boolean; risk_score: number; action: string } | null>(null);
   const [form, setForm] = useState({
     tipo: '',
     idioma: '',
@@ -14,16 +16,41 @@ export default function Editorial() {
   });
 
   const tipos = [
-    { id: 'infantil', label: '📚 Libro infantil', desc: 'Historias para niños 3-10 años' },
-    { id: 'actividades', label: '✏️ Activity book', desc: 'Laberintos, colorear, puntos' },
-    { id: 'noficcion', label: '💡 No ficción', desc: 'Guías, manuales, how-to' },
-    { id: 'ficcion', label: '🌙 Ficción', desc: 'Novela, cuentos, relatos' },
+    { id: 'infantil',    label: 'Libro infantil', desc: 'Historias para niños 3-10 años' },
+    { id: 'actividades', label: 'Activity book',  desc: 'Laberintos, colorear, puntos'   },
+    { id: 'noficcion',  label: 'No ficcion',      desc: 'Guias, manuales, how-to'        },
+    { id: 'ficcion',    label: 'Ficcion',          desc: 'Novela, cuentos, relatos'       },
   ];
 
   const nichos = [
-    'Inteligencia Artificial', 'Emprendimiento', 'Educación financiera',
-    'Mindfulness', 'Crianza', 'Tecnología', 'Motivación', 'Otro'
+    'Inteligencia Artificial', 'Emprendimiento', 'Educacion financiera',
+    'Mindfulness', 'Crianza', 'Tecnologia', 'Motivacion', 'Otro',
   ];
+
+  async function handleGenerar() {
+    if (!form.nicho || !form.tema) return;
+    setSending(true);
+    try {
+      const result = await sendPromptToCentinela({
+        prompt: `Generar libro: ${form.tipo} | ${form.nicho} | ${form.tema} | ${form.diferenciador}`,
+        agent: 'pluma',
+        user: 'daniel',
+        model: 'claude-sonnet',
+      });
+      setCentinelaResult(result);
+    } catch(e) {}
+    setSending(false);
+    setPaso(3);
+  }
+
+  async function handleGuardar() {
+    await sendPromptToCentinela({
+      prompt: `Guardar concepto libro: ${form.tipo} | ${form.nicho} | ${form.tema}`,
+      agent: 'pluma',
+      user: 'daniel',
+      model: 'claude-sonnet',
+    });
+  }
 
   return (
     <div style={{ minHeight: '100vh', position: 'relative', zIndex: 10, padding: '32px', maxWidth: '900px', margin: '0 auto' }}>
@@ -33,14 +60,24 @@ export default function Editorial() {
         <a href="/dashboard" style={{
           padding: '8px 16px', borderRadius: '10px',
           background: 'rgba(108,63,245,0.08)', color: '#6C3FF5',
-          fontSize: '14px', fontWeight: 600, textDecoration: 'none'
+          fontSize: '14px', fontWeight: 600, textDecoration: 'none',
         }}>← Volver</a>
         <div>
           <h1 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: '28px', color: '#1A1A2E' }}>
-            📚 Motor Editorial
+            Motor Editorial
           </h1>
-          <p style={{ fontSize: '13px', color: '#718096' }}>Crea libros para Amazon KDP · Inglés y Español</p>
+          <p style={{ fontSize: '13px', color: '#718096' }}>Crea libros para Amazon KDP · Ingles y Espanol</p>
         </div>
+        {centinelaResult && (
+          <div style={{
+            marginLeft: 'auto', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
+            background: centinelaResult.blocked ? 'rgba(255,51,51,0.1)' : 'rgba(0,255,136,0.1)',
+            color: centinelaResult.blocked ? '#FF3333' : '#00CC6A',
+            border: `1px solid ${centinelaResult.blocked ? 'rgba(255,51,51,0.3)' : 'rgba(0,255,136,0.3)'}`,
+          }}>
+            CENTINELA: {centinelaResult.action} · Risk {centinelaResult.risk_score.toFixed(0)}
+          </div>
+        )}
       </div>
 
       {/* Pasos */}
@@ -54,11 +91,11 @@ export default function Editorial() {
         ))}
       </div>
 
-      {/* Paso 1 — Tipo de libro */}
+      {/* Paso 1 */}
       {paso === 1 && (
         <div>
           <h2 style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '18px', marginBottom: '20px' }}>
-            ¿Qué tipo de libro quieres crear?
+            ¿Que tipo de libro quieres crear?
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
             {tipos.map((t) => (
@@ -69,20 +106,17 @@ export default function Editorial() {
                   border: form.tipo === t.id ? '2px solid #6C3FF5' : '1px solid rgba(255,255,255,0.75)',
                   background: form.tipo === t.id ? 'rgba(108,63,245,0.06)' : 'rgba(255,255,255,0.82)',
                 }}>
-                <div style={{ fontSize: '28px', marginBottom: '8px' }}>{t.label.split(' ')[0]}</div>
-                <div style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '15px', color: '#1A1A2E' }}>
-                  {t.label.split(' ').slice(1).join(' ')}
-                </div>
+                <div style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '15px', color: '#1A1A2E' }}>{t.label}</div>
                 <div style={{ fontSize: '13px', color: '#718096', marginTop: '4px' }}>{t.desc}</div>
               </div>
             ))}
           </div>
 
           <h2 style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '18px', marginBottom: '16px' }}>
-            ¿En qué idioma?
+            ¿En que idioma?
           </h2>
           <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
-            {['Inglés', 'Español', 'Ambos'].map((lang) => (
+            {['Ingles', 'Espanol', 'Ambos'].map((lang) => (
               <div key={lang} onClick={() => setForm({ ...form, idioma: lang })}
                 style={{
                   padding: '10px 24px', borderRadius: '20px', cursor: 'pointer', fontWeight: 600, fontSize: '14px',
@@ -100,17 +134,16 @@ export default function Editorial() {
         </div>
       )}
 
-      {/* Paso 2 — Concepto */}
+      {/* Paso 2 */}
       {paso === 2 && (
         <div>
           <h2 style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '18px', marginBottom: '20px' }}>
             Define el concepto del libro
           </h2>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
             <div>
               <label style={{ fontSize: '14px', fontWeight: 500, color: '#4A5568', display: 'block', marginBottom: '8px' }}>
-                Nicho / Categoría
+                Nicho / Categoria
               </label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {nichos.map((n) => (
@@ -126,14 +159,14 @@ export default function Editorial() {
 
             <div>
               <label style={{ fontSize: '14px', fontWeight: 500, color: '#4A5568', display: 'block', marginBottom: '8px' }}>
-                Público objetivo
+                Publico objetivo
               </label>
               <input value={form.publico} onChange={(e) => setForm({ ...form, publico: e.target.value })}
-                placeholder="Ej: Niños de 4-7 años, Emprendedores latinoamericanos..."
+                placeholder="Ej: Ninos de 4-7 anos, Emprendedores latinoamericanos..."
                 style={{
                   width: '100%', padding: '12px 16px', borderRadius: '10px',
                   border: '1px solid rgba(108,63,245,0.2)', background: 'rgba(255,255,255,0.8)',
-                  fontSize: '15px', color: '#1A1A2E', outline: 'none', fontFamily: 'Plus Jakarta Sans'
+                  fontSize: '15px', color: '#1A1A2E', outline: 'none', fontFamily: 'Plus Jakarta Sans',
                 }} />
             </div>
 
@@ -142,24 +175,24 @@ export default function Editorial() {
                 Tema central del libro
               </label>
               <input value={form.tema} onChange={(e) => setForm({ ...form, tema: e.target.value })}
-                placeholder="Ej: Un robot que enseña sobre emociones a los niños..."
+                placeholder="Ej: Un robot que ensena sobre emociones a los ninos..."
                 style={{
                   width: '100%', padding: '12px 16px', borderRadius: '10px',
                   border: '1px solid rgba(108,63,245,0.2)', background: 'rgba(255,255,255,0.8)',
-                  fontSize: '15px', color: '#1A1A2E', outline: 'none', fontFamily: 'Plus Jakarta Sans'
+                  fontSize: '15px', color: '#1A1A2E', outline: 'none', fontFamily: 'Plus Jakarta Sans',
                 }} />
             </div>
 
             <div>
               <label style={{ fontSize: '14px', fontWeight: 500, color: '#4A5568', display: 'block', marginBottom: '8px' }}>
-                ¿Qué lo hace diferente a los demás?
+                ¿Que lo hace diferente?
               </label>
               <input value={form.diferenciador} onChange={(e) => setForm({ ...form, diferenciador: e.target.value })}
                 placeholder="Ej: Combina IA con valores culturales latinos..."
                 style={{
                   width: '100%', padding: '12px 16px', borderRadius: '10px',
                   border: '1px solid rgba(108,63,245,0.2)', background: 'rgba(255,255,255,0.8)',
-                  fontSize: '15px', color: '#1A1A2E', outline: 'none', fontFamily: 'Plus Jakarta Sans'
+                  fontSize: '15px', color: '#1A1A2E', outline: 'none', fontFamily: 'Plus Jakarta Sans',
                 }} />
             </div>
           </div>
@@ -167,30 +200,31 @@ export default function Editorial() {
           <div style={{ display: 'flex', gap: '12px' }}>
             <button onClick={() => setPaso(1)} style={{
               padding: '14px 32px', borderRadius: '12px', border: '1px solid rgba(108,63,245,0.3)',
-              background: 'transparent', color: '#6C3FF5', fontWeight: 600, cursor: 'pointer', fontSize: '15px'
-            }}>← Atrás</button>
+              background: 'transparent', color: '#6C3FF5', fontWeight: 600, cursor: 'pointer', fontSize: '15px',
+            }}>← Atras</button>
             <button className="btn-ink"
-              onClick={async () => { if (form.nicho && form.tema) { await import('@/lib/centinela').then(m => m.sendPromptToCentinela({ prompt: `Generar libro: ${form.tipo} | ${form.nicho} | ${form.tema} | ${form.diferenciador}`, agent: 'pluma', user: 'daniel' })); setPaso(3); } }}
+              onClick={handleGenerar}
+              disabled={sending || !form.nicho || !form.tema}
               style={{ padding: '14px 40px', fontSize: '16px', opacity: form.nicho && form.tema ? 1 : 0.5 }}>
-              Generar concepto →
+              {sending ? 'Analizando...' : 'Generar concepto →'}
             </button>
           </div>
         </div>
       )}
 
-      {/* Paso 3 — Generar */}
+      {/* Paso 3 */}
       {paso === 3 && (
         <div>
           <div className="glass-card" style={{ padding: '32px', marginBottom: '24px', borderTop: '3px solid #6C3FF5' }}>
             <h2 style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '20px', marginBottom: '20px', color: '#6C3FF5' }}>
-              ✅ Concepto del libro
+              Concepto del libro
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               {[
-                { label: 'Tipo', valor: form.tipo },
-                { label: 'Idioma', valor: form.idioma },
-                { label: 'Nicho', valor: form.nicho },
-                { label: 'Público', valor: form.publico },
+                { label: 'Tipo',    valor: form.tipo    },
+                { label: 'Idioma',  valor: form.idioma  },
+                { label: 'Nicho',   valor: form.nicho   },
+                { label: 'Publico', valor: form.publico },
               ].map((item, i) => (
                 <div key={i} style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(108,63,245,0.06)' }}>
                   <div style={{ fontSize: '12px', color: '#718096', fontWeight: 600, marginBottom: '4px' }}>{item.label}</div>
@@ -206,6 +240,18 @@ export default function Editorial() {
               <div style={{ fontSize: '12px', color: '#718096', fontWeight: 600, marginBottom: '4px' }}>Diferenciador</div>
               <div style={{ fontSize: '15px', color: '#1A1A2E' }}>{form.diferenciador}</div>
             </div>
+
+            {centinelaResult && (
+              <div style={{
+                marginTop: '16px', padding: '12px 16px', borderRadius: '10px',
+                background: centinelaResult.blocked ? 'rgba(255,51,51,0.06)' : 'rgba(0,255,136,0.06)',
+                border: `1px solid ${centinelaResult.blocked ? 'rgba(255,51,51,0.2)' : 'rgba(0,255,136,0.2)'}`,
+                fontSize: '12px', fontFamily: 'monospace',
+                color: centinelaResult.blocked ? '#FF3333' : '#00CC6A',
+              }}>
+                CENTINELA RUNTIME · Action: {centinelaResult.action} · Risk Score: {centinelaResult.risk_score.toFixed(1)} · {centinelaResult.blocked ? 'BLOQUEADO' : 'PERMITIDO'}
+              </div>
+            )}
           </div>
 
           <div className="glass-card" style={{ padding: '32px', textAlign: 'center' }}>
@@ -214,23 +260,23 @@ export default function Editorial() {
               Listo para generar el libro completo
             </h3>
             <p style={{ color: '#718096', fontSize: '14px', marginBottom: '24px' }}>
-              Cuando conectes la API de Anthropic, PLUMA generará el guión completo,<br/>
-              estructura por capítulos, títulos optimizados para KDP y keywords SEO.
+              Cuando conectes la API de Anthropic, PLUMA generara el guion completo,
+              estructura por capitulos, titulos optimizados para KDP y keywords SEO.
             </p>
             <div style={{
               padding: '16px 24px', borderRadius: '12px', marginBottom: '24px',
               background: 'rgba(245,200,66,0.1)', border: '1px solid rgba(245,200,66,0.3)',
-              fontSize: '14px', color: '#A87800'
+              fontSize: '14px', color: '#A87800',
             }}>
-              ⏳ Esperando API key de Anthropic — $5 activa este motor completamente
+              Esperando API key de Anthropic — $5 activa este motor completamente
             </div>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button onClick={() => setPaso(1)} style={{
                 padding: '14px 32px', borderRadius: '12px', border: '1px solid rgba(108,63,245,0.3)',
-                background: 'transparent', color: '#6C3FF5', fontWeight: 600, cursor: 'pointer'
+                background: 'transparent', color: '#6C3FF5', fontWeight: 600, cursor: 'pointer',
               }}>← Nuevo libro</button>
-              <button className="btn-ink" style={{ padding: '14px 40px', fontSize: '16px' }}>
-                💾 Guardar concepto
+              <button className="btn-ink" onClick={handleGuardar} style={{ padding: '14px 40px', fontSize: '16px' }}>
+                Guardar concepto
               </button>
             </div>
           </div>

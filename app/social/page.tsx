@@ -1,9 +1,11 @@
 'use client';
-
 import { useState } from 'react';
+import { sendPromptToCentinela } from '@/lib/centinela';
 
 export default function Social() {
   const [paso, setPaso] = useState(1);
+  const [sending, setSending] = useState(false);
+  const [centinelaResult, setCentinelaResult] = useState<{ blocked: boolean; risk_score: number; action: string } | null>(null);
   const [form, setForm] = useState({
     red: '',
     tipo: '',
@@ -14,16 +16,41 @@ export default function Social() {
   });
 
   const redes = [
-    { id: 'linkedin', label: '💼 LinkedIn', desc: 'Posts profesionales · Artículos' },
-    { id: 'twitter', label: '✦ X / Twitter', desc: 'Threads · Tweets virales' },
-    { id: 'instagram', label: '📸 Instagram', desc: 'Captions · Carruseles' },
-    { id: 'facebook', label: '👥 Facebook', desc: 'Posts · Grupos · Ads' },
+    { id: 'linkedin',  label: 'LinkedIn',   desc: 'Posts profesionales · Articulos' },
+    { id: 'twitter',   label: 'X / Twitter', desc: 'Threads · Tweets virales'       },
+    { id: 'instagram', label: 'Instagram',   desc: 'Captions · Carruseles'           },
+    { id: 'facebook',  label: 'Facebook',    desc: 'Posts · Grupos · Ads'            },
   ];
 
-  const tipos = ['Post único', 'Carrusel / Thread', 'Historia / Story', 'Newsletter'];
+  const tipos     = ['Post unico', 'Carrusel / Thread', 'Historia / Story', 'Newsletter'];
   const objetivos = ['Conseguir clientes', 'Ganar seguidores', 'Generar debate', 'Educar', 'Vender producto', 'Posicionamiento'];
-  const tonos = ['Profesional', 'Cercano', 'Inspiracional', 'Directo', 'Humorístico', 'Controversial'];
-  const nichos = ['IA y Tecnología', 'Emprendimiento', 'Finanzas', 'Marketing', 'Educación', 'Liderazgo', 'Otro'];
+  const tonos     = ['Profesional', 'Cercano', 'Inspiracional', 'Directo', 'Humoristico', 'Controversial'];
+  const nichos    = ['IA y Tecnologia', 'Emprendimiento', 'Finanzas', 'Marketing', 'Educacion', 'Liderazgo', 'Otro'];
+
+  async function handleGenerar() {
+    if (!form.nicho || !form.tema || !form.objetivo) return;
+    setSending(true);
+    try {
+      const result = await sendPromptToCentinela({
+        prompt: `Generar post social: ${form.red} | ${form.tipo} | ${form.nicho} | ${form.objetivo} | ${form.tono} | ${form.tema}`,
+        agent: 'pluma',
+        user: 'daniel',
+        model: 'claude-sonnet',
+      });
+      setCentinelaResult(result);
+    } catch(e) {}
+    setSending(false);
+    setPaso(3);
+  }
+
+  async function handleGuardar() {
+    await sendPromptToCentinela({
+      prompt: `Guardar concepto social: ${form.red} | ${form.nicho} | ${form.tema}`,
+      agent: 'pluma',
+      user: 'daniel',
+      model: 'claude-sonnet',
+    });
+  }
 
   return (
     <div style={{ minHeight: '100vh', position: 'relative', zIndex: 10, padding: '32px', maxWidth: '900px', margin: '0 auto' }}>
@@ -32,14 +59,24 @@ export default function Social() {
         <a href="/dashboard" style={{
           padding: '8px 16px', borderRadius: '10px',
           background: 'rgba(108,63,245,0.08)', color: '#6C3FF5',
-          fontSize: '14px', fontWeight: 600, textDecoration: 'none'
+          fontSize: '14px', fontWeight: 600, textDecoration: 'none',
         }}>← Volver</a>
         <div>
           <h1 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: '28px', color: '#1A1A2E' }}>
-            📣 Motor Social
+            Motor Social
           </h1>
           <p style={{ fontSize: '13px', color: '#718096' }}>LinkedIn · X · Instagram · Facebook</p>
         </div>
+        {centinelaResult && (
+          <div style={{
+            marginLeft: 'auto', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
+            background: centinelaResult.blocked ? 'rgba(255,51,51,0.1)' : 'rgba(0,255,136,0.1)',
+            color: centinelaResult.blocked ? '#FF3333' : '#00CC6A',
+            border: `1px solid ${centinelaResult.blocked ? 'rgba(255,51,51,0.3)' : 'rgba(0,255,136,0.3)'}`,
+          }}>
+            CENTINELA: {centinelaResult.action} · Risk {centinelaResult.risk_score.toFixed(0)}
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '32px' }}>
@@ -55,7 +92,7 @@ export default function Social() {
       {paso === 1 && (
         <div>
           <h2 style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '18px', marginBottom: '20px' }}>
-            ¿En qué red social vas a publicar?
+            ¿En que red social vas a publicar?
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '28px' }}>
             {redes.map((r) => (
@@ -66,10 +103,7 @@ export default function Social() {
                   border: form.red === r.id ? '2px solid #6C3FF5' : '1px solid rgba(255,255,255,0.75)',
                   background: form.red === r.id ? 'rgba(108,63,245,0.06)' : 'rgba(255,255,255,0.82)',
                 }}>
-                <div style={{ fontSize: '28px', marginBottom: '8px' }}>{r.label.split(' ')[0]}</div>
-                <div style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '15px', color: '#1A1A2E' }}>
-                  {r.label.split(' ').slice(1).join(' ')}
-                </div>
+                <div style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '15px', color: '#1A1A2E' }}>{r.label}</div>
                 <div style={{ fontSize: '13px', color: '#718096', marginTop: '4px' }}>{r.desc}</div>
               </div>
             ))}
@@ -103,7 +137,6 @@ export default function Social() {
             Define el contenido
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
-
             <div>
               <label style={{ fontSize: '14px', fontWeight: 500, color: '#4A5568', display: 'block', marginBottom: '8px' }}>Nicho</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -149,11 +182,11 @@ export default function Social() {
             <div>
               <label style={{ fontSize: '14px', fontWeight: 500, color: '#4A5568', display: 'block', marginBottom: '8px' }}>Tema del post</label>
               <input value={form.tema} onChange={(e) => setForm({ ...form, tema: e.target.value })}
-                placeholder="Ej: Cómo usé IA para triplicar mis ingresos en 30 días..."
+                placeholder="Ej: Como use IA para triplicar mis ingresos en 30 dias..."
                 style={{
                   width: '100%', padding: '12px 16px', borderRadius: '10px',
                   border: '1px solid rgba(108,63,245,0.2)', background: 'rgba(255,255,255,0.8)',
-                  fontSize: '15px', color: '#1A1A2E', outline: 'none', fontFamily: 'Plus Jakarta Sans'
+                  fontSize: '15px', color: '#1A1A2E', outline: 'none', fontFamily: 'Plus Jakarta Sans',
                 }} />
             </div>
           </div>
@@ -161,12 +194,13 @@ export default function Social() {
           <div style={{ display: 'flex', gap: '12px' }}>
             <button onClick={() => setPaso(1)} style={{
               padding: '14px 32px', borderRadius: '12px', border: '1px solid rgba(108,63,245,0.3)',
-              background: 'transparent', color: '#6C3FF5', fontWeight: 600, cursor: 'pointer', fontSize: '15px'
-            }}>← Atrás</button>
+              background: 'transparent', color: '#6C3FF5', fontWeight: 600, cursor: 'pointer', fontSize: '15px',
+            }}>← Atras</button>
             <button className="btn-ink"
-              onClick={() => form.nicho && form.tema && form.objetivo && setPaso(3)}
+              onClick={handleGenerar}
+              disabled={sending || !form.nicho || !form.tema || !form.objetivo}
               style={{ padding: '14px 40px', fontSize: '16px', opacity: form.nicho && form.tema && form.objetivo ? 1 : 0.5 }}>
-              Ver resumen →
+              {sending ? 'Analizando...' : 'Ver resumen →'}
             </button>
           </div>
         </div>
@@ -176,15 +210,15 @@ export default function Social() {
         <div>
           <div className="glass-card" style={{ padding: '32px', marginBottom: '24px', borderTop: '3px solid #6C3FF5' }}>
             <h2 style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '20px', marginBottom: '20px', color: '#6C3FF5' }}>
-              ✅ Resumen del post
+              Resumen del post
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               {[
-                { label: 'Red social', valor: form.red },
-                { label: 'Tipo', valor: form.tipo },
-                { label: 'Nicho', valor: form.nicho },
-                { label: 'Objetivo', valor: form.objetivo },
-                { label: 'Tono', valor: form.tono },
+                { label: 'Red social', valor: form.red      },
+                { label: 'Tipo',       valor: form.tipo     },
+                { label: 'Nicho',      valor: form.nicho    },
+                { label: 'Objetivo',   valor: form.objetivo },
+                { label: 'Tono',       valor: form.tono     },
               ].map((item, i) => (
                 <div key={i} style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(108,63,245,0.06)' }}>
                   <div style={{ fontSize: '12px', color: '#718096', fontWeight: 600, marginBottom: '4px' }}>{item.label}</div>
@@ -196,6 +230,18 @@ export default function Social() {
               <div style={{ fontSize: '12px', color: '#718096', fontWeight: 600, marginBottom: '4px' }}>Tema</div>
               <div style={{ fontSize: '15px', color: '#1A1A2E' }}>{form.tema}</div>
             </div>
+
+            {centinelaResult && (
+              <div style={{
+                marginTop: '16px', padding: '12px 16px', borderRadius: '10px',
+                background: centinelaResult.blocked ? 'rgba(255,51,51,0.06)' : 'rgba(0,255,136,0.06)',
+                border: `1px solid ${centinelaResult.blocked ? 'rgba(255,51,51,0.2)' : 'rgba(0,255,136,0.2)'}`,
+                fontSize: '12px', fontFamily: 'monospace',
+                color: centinelaResult.blocked ? '#FF3333' : '#00CC6A',
+              }}>
+                CENTINELA RUNTIME · Action: {centinelaResult.action} · Risk Score: {centinelaResult.risk_score.toFixed(1)} · {centinelaResult.blocked ? 'BLOQUEADO' : 'PERMITIDO'}
+              </div>
+            )}
           </div>
 
           <div className="glass-card" style={{ padding: '32px', textAlign: 'center' }}>
@@ -204,23 +250,22 @@ export default function Social() {
               Listo para generar tu contenido social
             </h3>
             <p style={{ color: '#718096', fontSize: '14px', marginBottom: '24px' }}>
-              PLUMA generará: copy completo, hashtags optimizados,<br/>
-              CTA y variaciones para A/B testing.
+              PLUMA generara: copy completo, hashtags optimizados, CTA y variaciones para A/B testing.
             </p>
             <div style={{
               padding: '16px 24px', borderRadius: '12px', marginBottom: '24px',
               background: 'rgba(245,200,66,0.1)', border: '1px solid rgba(245,200,66,0.3)',
-              fontSize: '14px', color: '#A87800'
+              fontSize: '14px', color: '#A87800',
             }}>
-              ⏳ Esperando API key de Anthropic — $5 activa este motor completamente
+              Esperando API key de Anthropic — $5 activa este motor completamente
             </div>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button onClick={() => setPaso(1)} style={{
                 padding: '14px 32px', borderRadius: '12px', border: '1px solid rgba(108,63,245,0.3)',
-                background: 'transparent', color: '#6C3FF5', fontWeight: 600, cursor: 'pointer'
+                background: 'transparent', color: '#6C3FF5', fontWeight: 600, cursor: 'pointer',
               }}>← Nuevo post</button>
-              <button className="btn-ink" style={{ padding: '14px 40px', fontSize: '16px' }}>
-                💾 Guardar concepto
+              <button className="btn-ink" onClick={handleGuardar} style={{ padding: '14px 40px', fontSize: '16px' }}>
+                Guardar concepto
               </button>
             </div>
           </div>

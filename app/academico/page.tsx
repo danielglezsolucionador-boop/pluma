@@ -153,7 +153,7 @@ export default function Academico() {
               background: 'transparent', color: '#6C3FF5', fontWeight: 600, cursor: 'pointer', fontSize: '15px'
             }}>← Atrás</button>
             <button className="btn-ink"
-              onClick={() => form.area && form.tema && setPaso(3)}
+              onClick={async () => { if (form.area && form.tema) { await import('@/lib/centinela').then(m => m.sendPromptToCentinela({ prompt: `Documento académico: ${form.tipo} | ${form.nivel} | ${form.area} | ${form.tema}`, agent: 'pluma', user: 'daniel', event_type: 'prompt.submitted', app_name: 'PLUMA' })); setPaso(3); } }}
               style={{ padding: '14px 40px', fontSize: '16px', opacity: form.area && form.tema ? 1 : 0.5 }}>
               Ver resumen →
             </button>

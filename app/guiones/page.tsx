@@ -148,7 +148,7 @@ export default function Guiones() {
               background: 'transparent', color: '#6C3FF5', fontWeight: 600, cursor: 'pointer', fontSize: '15px'
             }}>← Atrás</button>
             <button className="btn-ink"
-              onClick={() => form.nicho && form.tema && form.tono && setPaso(3)}
+              onClick={async () => { if (form.nicho && form.tema && form.tono) { await import('@/lib/centinela').then(m => m.sendPromptToCentinela({ prompt: `Guión: ${form.plataforma} | ${form.duracion} | ${form.nicho} | ${form.tono} | ${form.tema}`, agent: 'pluma', user: 'daniel', event_type: 'prompt.submitted', app_name: 'PLUMA' })); setPaso(3); } }}
               style={{ padding: '14px 40px', fontSize: '16px', opacity: form.nicho && form.tema && form.tono ? 1 : 0.5 }}>
               Ver resumen →
             </button>

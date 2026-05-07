@@ -174,7 +174,7 @@ export default function Servicios() {
                   background: 'transparent', color: '#6C3FF5', fontWeight: 600, cursor: 'pointer'
                 }}>← Atrás</button>
                 <button className="btn-ink"
-                  onClick={() => form.duracion && form.entregables && setPaso(3)}
+                  onClick={async () => { if (form.duracion && form.entregables) { await import('@/lib/centinela').then(m => m.sendPromptToCentinela({ prompt: `Servicio ghostwriting: ${form.nicho} | ${form.cliente} | ${form.objetivo} | ${form.duracion} | ${form.entregables}`, agent: 'pluma', user: 'daniel', event_type: 'prompt.submitted', app_name: 'PLUMA' })); setPaso(3); } }}
                   style={{ padding: '14px 40px', fontSize: '16px', opacity: form.duracion && form.entregables ? 1 : 0.5 }}>
                   Ver propuesta →
                 </button>

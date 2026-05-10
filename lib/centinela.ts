@@ -1,6 +1,6 @@
 const CENTINELA_URL = 'https://centinela-backend-kzwk.onrender.com';
 const CENTINELA_USER = 'daniel';
-const CENTINELA_PASS = 'centinela24';
+const CENTINELA_PASS = 'Centinela24';
 
 let _token: string | null = null;
 let _tokenExp: number = 0;
